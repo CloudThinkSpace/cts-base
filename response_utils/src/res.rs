@@ -10,8 +10,10 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Default)]
 pub struct ResResult<T> {
-    pub code: Option<i32>,
+    pub code: i32,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub data: Option<T>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub msg: Option<String>,
 }
 
@@ -56,7 +58,7 @@ where
             StatusCode::OK,
             [(header::CONTENT_TYPE, "application/json; charset=utf-8")],
             Self {
-                code: Some(200),
+                code: 200,
                 data: Some(data),
                 msg: Some("success".to_string()),
             },
@@ -71,7 +73,7 @@ where
             StatusCode::INTERNAL_SERVER_ERROR,
             [(header::CONTENT_TYPE, "application/json; charset=utf-8")],
             Self {
-                code: Some(500),
+                code: 500,
                 data: None,
                 msg: Some(err.to_string()),
             },
@@ -88,7 +90,7 @@ where
             status_code,
             [(header::CONTENT_TYPE, "application/json; charset=utf-8")],
             Self {
-                code: Some(code),
+                code,
                 data: None,
                 msg: Some(err.to_string()),
             },
@@ -104,7 +106,7 @@ where
             StatusCode::OK,
             [(header::CONTENT_TYPE, "application/json; charset=utf-8")],
             Self {
-                code: Some(200),
+                code: 200,
                 data: Some(data),
                 msg: Some(msg.to_string()),
             },

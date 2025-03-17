@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = [ "cts-pgrow","response_utils"]
+members = [ "cts-pgrow", "cts-sql-expression","response_utils"]
 
 [workspace.package]
 authors = ["tanghy <tanghy@cloudthink.space>"]
@@ -12,12 +12,11 @@ repository = "https://github.com/maplibre/martin"
 rust-version = "1.77.2"
 
 [workspace.dependencies]
-response_utils = { path = "./response_utils", version = "0.1.1" }
-
-serde = "^1.0.197"
-serde_json = "^1.0.115"
-http = "^1.1.0"
-axum = "^0.7.5"
-mime = "^0.3.17"
+serde = "1.0.197"
+serde_json = "1.0.115"
+http = "1.1.0"
+axum = "0.8.1"
+mime = "0.3.17"
 chrono = "0.4.40"
 sqlx = "0.8.3"
+tokio = "1.44.1"

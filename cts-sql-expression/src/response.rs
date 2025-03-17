@@ -26,7 +26,9 @@ impl CtsResult {
         // 配置转换器
         let row_convert: Box<dyn PgRowConvert> = match format {
             // 匹配 类型是GeoJson 并且空间字段不为空
-            CtsFormat::GeoJson if geometry.is_some() => Box::new(GeoJsonConvert(geometry.unwrap())),
+            CtsFormat::GeoJson => Box::new(GeoJsonConvert(
+                geometry.unwrap_or_else(|| "geom".to_string())
+            )),
             CtsFormat::CSV => Box::new(CsvConvert),
             _ => Box::new(JsonConvert),
         };
@@ -49,5 +51,9 @@ impl CtsResult {
                 })
             }
         }
+    }
+
+    pub fn to_json(self) -> Value {
+        self.to_value(CtsFormat::Json, None)
     }
 }

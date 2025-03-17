@@ -29,18 +29,20 @@ impl<'a> SqlBuilder<'a> {
     pub fn new(
         pool: &'a Pool<Postgres>,
         table: String,
-        schema: String,
+        schema: Option<String>,
         geometry: Option<String>,
         param: CtsParam,
     ) -> Self {
+        let new_schema = schema.unwrap_or_else(|| "public".to_string());
         Self {
             param,
             table,
-            schema,
             pool,
             geometry,
+            schema: new_schema,
         }
     }
+
     // 解析查询sql函数
     async fn parse<DB: Database>(&self) -> Result<QueryBuilder<DB>, CtsError> {
         let param = &self.param;
@@ -60,7 +62,7 @@ impl<'a> SqlBuilder<'a> {
         let mut builder = QueryBuilder::new("select ");
 
         let table = &self.table;
-        let schema = &self.schema;
+        let schema =  &self.schema;
         // 判断是否有分组统计
         let fields = match &group {
             None => {
@@ -164,7 +166,7 @@ impl<'a> SqlBuilder<'a> {
     async fn get_table_columns(&self) -> Result<String, CtsError> {
         let param = &self.param;
         let table = &self.table;
-        let schema = &self.schema;
+        let schema =  &self.schema;
         match &self.geometry {
             None => {
                 Ok("*".to_string())
@@ -202,7 +204,7 @@ impl<'a> SqlBuilder<'a> {
         let filter = FilterParse(&param.filter).parse()?;
         let mut  builder = QueryBuilder::new("select count(*) as count");
         let table = &self.table;
-        let schema = &self.schema;
+        let schema =  &self.schema;
         builder.push(" from ");
         builder.push(schema);
         builder.push(".");

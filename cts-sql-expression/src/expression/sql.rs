@@ -7,7 +7,6 @@ use crate::expression::parse::order::OrderByParse;
 use crate::expression::parse::page::PageParse;
 use crate::expression::{Course, SqlParse};
 use sqlx::{ Pool, Postgres, Row};
-use sqlx::postgres::PgRow;
 use cts_pgrow::SerMapPgRow;
 use crate::error::CtsError;
 use crate::error::CtsError::ParamError;

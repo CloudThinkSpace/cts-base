@@ -10,7 +10,7 @@ impl PgRowConvert for CsvConvert {
         let mut result = Vec::new();
         for row in data.into_iter() {
             let vec_pg = SerVecPgRow::from(row);
-            let value = vec_pg.into();
+            let value:Value = vec_pg.into();
             result.push(value)
         }
         Value::Array(result)

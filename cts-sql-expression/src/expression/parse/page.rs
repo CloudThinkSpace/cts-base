@@ -1,5 +1,6 @@
 use crate::error::CtsError;
-use crate::expression::{PageParam, SqlParse};
+use crate::expression::{ SqlParse};
+use crate::request::PageParam;
 
 /// 解析分页参数
 /// @param page 默认 1

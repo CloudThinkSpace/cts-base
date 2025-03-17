@@ -5,41 +5,10 @@ use serde::de::Error;
 use serde::{Deserialize, Deserializer, Serialize};
 use serde_json::Value;
 use sqlx::FromRow;
-use sqlx::postgres::PgRow;
 use crate::error::CtsError;
 use crate::error::CtsError::ParamError;
 
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct CtsParam {
-    pub filter: Option<Vec<CtsValue>>,
-    pub group_by: Option<Vec<String>>,
-    pub out_fields: Option<Vec<CtsValue>>,
-    pub aggregate: Option<Vec<CtsValue>>,
-    pub return_geometry: Option<bool>,
-    pub order: Option<Vec<CtsValue>>,
-    pub page: Option<PageParam>,
-    pub geo_format: Option<GeometryFormat>,
-    pub format: Option<CtsFormat>,
-}
 
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all = "lowercase")]
-pub enum CtsFormat {
-    Json,
-    GeoJson,
-    CSV,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all = "lowercase")]
-pub enum GeometryFormat {
-    GeoJson,
-    WKT,
-    Byte,
-    Text,
-    WKB,
-}
 
 #[derive(Debug, Serialize)]
 pub enum CtsValue {
@@ -61,13 +30,6 @@ pub struct Course {
     pub data_type: String,
     pub is_nullable: String,
     pub column_default: Option<String>,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct PageParam {
-    pub page: i32,
-    pub page_size: i32,
 }
 
 impl<'de> Deserialize<'de> for CtsValue {
@@ -112,17 +74,4 @@ pub trait SqlParse
 }
 
 
-#[derive(Debug)]
-pub enum CtsResult {
-    List(Vec<PgRow>),
-    Page(PageValue),
-}
 
-#[derive(Debug)]
-pub struct PageValue {
-    pub current_page: i32,
-    pub page_size: i32,
-    pub pages: i64,
-    pub total: i64,
-    pub list: Vec<PgRow>,
-}

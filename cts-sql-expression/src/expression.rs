@@ -1,5 +1,6 @@
 pub mod parse;
 pub mod sql;
+mod query_builder;
 
 use serde::de::Error;
 use serde::{Deserialize, Deserializer, Serialize};

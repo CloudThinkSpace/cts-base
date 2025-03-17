@@ -5,9 +5,10 @@ use crate::expression::parse::group::GroupByParse;
 use crate::expression::parse::order::OrderByParse;
 use crate::expression::parse::page::PageParse;
 use crate::expression::{Course, SqlParse};
-use sqlx::{Database, Pool, Postgres, QueryBuilder, Row};
+use sqlx::{ Pool, Postgres, Row};
 use crate::error::CtsError;
 use crate::error::CtsError::ParamError;
+use crate::expression::query_builder::QueryBuilder;
 use crate::request::{CtsParam, GeometryFormat};
 use crate::response::{CtsResult, PageValue};
 
@@ -58,7 +59,7 @@ impl<'a> SqlBuilder<'a> {
     }
 
     // 解析查询sql函数
-    async fn parse<DB: Database>(&self) -> Result<QueryBuilder<DB>, CtsError> {
+    async fn parse(&self) -> Result<String, CtsError> {
         let param = &self.param;
         // filter 解析
         let filter = FilterParse(&param.filter).parse()?;
@@ -74,8 +75,9 @@ impl<'a> SqlBuilder<'a> {
         let page = PageParse(&param.page).parse()?;
         // sql构造对象
         let mut builder = QueryBuilder::new("select ");
-
+        // table表名
         let table = &self.table;
+        // schema 模式
         let schema =  &self.schema;
         // 判断是否有分组统计
         let fields = match &group {
@@ -137,25 +139,16 @@ impl<'a> SqlBuilder<'a> {
             }
         };
         builder.push(fields);
-        // 处理过滤
-        match filter {
-            None => {
-                builder.push(" from ");
-                builder.push(schema);
-                builder.push(".");
-                builder.push(table);
-            }
-            Some(data) => {
-                builder.push(" from ");
-                builder.push(schema);
-                builder.push(".");
-                builder.push(table);
-                builder.push(" where ");
-                builder.push(data);
+        builder.push(" from ");
+        builder.push(schema);
+        builder.push(".");
+        builder.push(table);
 
-            }
+        // 判断是否有过滤条件
+        if let Some(data) = filter {
+            builder.push(" where ");
+            builder.push(data);
         }
-
         // 处理group
         if let Some(data) = group {
             builder.push(" group by ");
@@ -173,7 +166,7 @@ impl<'a> SqlBuilder<'a> {
             builder.push(data);
         }
 
-        Ok(builder)
+        Ok(builder.build())
     }
 
     // 查询表字段方法
@@ -212,7 +205,7 @@ impl<'a> SqlBuilder<'a> {
     }
 
     // 解析分页查询sql函数
-    async fn parse_page_count<DB:Database>(&self) -> Result<QueryBuilder<DB>, CtsError> {
+    async fn parse_page_count(&self) -> Result<String, CtsError> {
         let param = &self.param;
         // filter 解析
         let filter = FilterParse(&param.filter).parse()?;
@@ -228,7 +221,7 @@ impl<'a> SqlBuilder<'a> {
             builder.push(" where ");
             builder.push(data);
         }
-        Ok(builder)
+        Ok(builder.build())
     }
 
     /// 处理geometry format 格式参数，根据不同的格式参数，返回不同的空间字段
@@ -265,19 +258,17 @@ impl<'a> SqlBuilder<'a> {
 
     pub async fn query(&self) -> Result<CtsResult, CtsError> {
         // 解析查询语句
-        let mut  builder = self.parse().await?;
-        let query = builder.build();
+        let query = self.parse().await?;
         // 查询数据
-        let list = query.fetch_all(self.pool).await.map_err(|err| ParamError(err.to_string()))?;
+        let list = sqlx::query(&query).fetch_all(self.pool).await.map_err(|err| ParamError(err.to_string()))?;
         // 判断是否有分组条件，有分组条件不能进行分页
         if self.param.group_by.is_none() {
             // 分页查询
             if let Some(page_param) = &self.param.page {
                 // 解析分页查询语句
-                let mut  builder_page = self.parse_page_count().await?;
-                let query = builder_page.build();
+                let query = self.parse_page_count().await?;
                 // 查询分页结果
-                let result = query.fetch_one(self.pool).await.map_err(|err| ParamError(err.to_string()))?;
+                let result = sqlx::query(&query).fetch_one(self.pool).await.map_err(|err| ParamError(err.to_string()))?;
                 let total = result.get::<i64, _>(0);
                 // 计算页数
                 let pages = (total as f64 * 1.0 / page_param.page_size as f64).ceil() as i64;

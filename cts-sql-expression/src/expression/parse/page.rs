@@ -16,7 +16,7 @@ impl SqlParse for PageParse<'_> {
                 let page = &data.page;
                 let page_size = &data.page_size;
                 let offset = (page - 1) * page_size;
-                Ok(Some(format!("LIMIT {page_size} OFFSET {offset}")))
+                Ok(Some(format!(" LIMIT {page_size} OFFSET {offset}")))
             }
         }
     }

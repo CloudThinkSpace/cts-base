@@ -1,3 +1,4 @@
+use serde_json::Value;
 use crate::expression::parse::aggregate::AggregateParse;
 use crate::expression::parse::field::FieldParse;
 use crate::expression::parse::filter::FilterParse;
@@ -6,6 +7,8 @@ use crate::expression::parse::order::OrderByParse;
 use crate::expression::parse::page::PageParse;
 use crate::expression::{Course, SqlParse};
 use sqlx::{ Pool, Postgres, Row};
+use sqlx::postgres::PgRow;
+use cts_pgrow::SerMapPgRow;
 use crate::error::CtsError;
 use crate::error::CtsError::ParamError;
 use crate::expression::query_builder::QueryBuilder;
@@ -288,5 +291,15 @@ impl<'a> SqlBuilder<'a> {
             // 返回成功数据列表
             Ok(CtsResult::List(list))
         }
+    }
+
+    pub async fn query_one(&self) -> Result<Value, CtsError> {
+        // 解析查询语句
+        let query = self.parse().await?;
+        // 查询数据
+        let row = sqlx::query(&query).fetch_one(self.pool).await.map_err(|err| ParamError(err.to_string()))?;
+        let row_map = SerMapPgRow::from(row);
+        let value = row_map.into();
+        Ok(value)
     }
 }

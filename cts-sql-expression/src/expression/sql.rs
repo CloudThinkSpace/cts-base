@@ -43,6 +43,20 @@ impl<'a> SqlBuilder<'a> {
         }
     }
 
+    pub fn new_simplify(
+        pool: &'a Pool<Postgres>,
+        table: String,
+        param: CtsParam,
+    )-> Self {
+        Self {
+            param,
+            table,
+            pool,
+            geometry: None,
+            schema: "public".to_string(),
+        }
+    }
+
     // 解析查询sql函数
     async fn parse<DB: Database>(&self) -> Result<QueryBuilder<DB>, CtsError> {
         let param = &self.param;
@@ -214,7 +228,6 @@ impl<'a> SqlBuilder<'a> {
             builder.push(" where ");
             builder.push(data);
         }
-
         Ok(builder)
     }
 

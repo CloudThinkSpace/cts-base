@@ -13,4 +13,5 @@ rust-version.workspace = true
 serde = { workspace = true, features = ["derive"] }
 serde_json.workspace = true
 sqlx = {workspace = true, features = ["runtime-tokio-rustls", "postgres"]}
+cts-pgrow.workspace = true
 

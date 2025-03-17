@@ -212,3 +212,9 @@ impl From<SerVecPgRow> for PgRow {
         value.0
     }
 }
+
+impl From<SerMapPgRow> for Value {
+    fn from(value: SerMapPgRow) -> Self {
+        serde_json::to_value(value).unwrap()
+    }
+}

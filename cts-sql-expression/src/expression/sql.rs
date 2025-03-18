@@ -205,13 +205,13 @@ impl<'a> SqlBuilder<'a> {
                     .await;
                 // 获取表字段列表
                 let result = result.map_err(|err| ParamError(format!("{err}")))?;
-                let mut geometry_field = String::from("");
+                let mut geometry_field = None;
                 let mut fields = Vec::new();
                 // 遍历字段并收集字段名称
                 for item in result.into_iter() {
                     // 判断是否有空间字段
                     if item.udt_name == "geometry" {
-                        geometry_field = item.column_name;
+                        geometry_field = Some(item.column_name);
                     } else {
                         fields.push(item.column_name);
                     }
@@ -220,12 +220,15 @@ impl<'a> SqlBuilder<'a> {
                 if let Some(data) = param.return_geometry {
                     // 判断是否返回空间字段
                     if data {
-                        if geometry_field.is_empty() {
+                        if geometry_field.is_none() {
                             return Err(ParamError("参数错误，该表不包含空间字段".to_string()));
+                        } else {
+                            // 处理空间字段
+                            let geometry_field =
+                                self.handler_geometry_format(geometry_field.unwrap().as_str());
+                            // 添加空间字段
+                            fields.push(geometry_field);
                         }
-                        // 处理空间字段
-                        let geometry_field = self.handler_geometry_format(geometry_field.as_str());
-                        fields.push(geometry_field);
                     }
                 }
                 Ok(fields.join(","))

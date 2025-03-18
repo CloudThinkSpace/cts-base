@@ -1,4 +1,4 @@
-use crate::config::ExpressionConfig;
+use crate::config::{ExpressionConfig, QueryMode};
 use crate::error::CtsError;
 use crate::error::CtsError::ParamError;
 use crate::expression::parse::aggregate::AggregateParse;
@@ -26,7 +26,7 @@ pub struct SqlBuilder<'a> {
     pool: &'a Pool<Postgres>,
     table: String,
     schema: String,
-    geometry: Option<String>,
+    query_mode: QueryMode,
 }
 
 impl<'a> SqlBuilder<'a> {
@@ -37,19 +37,18 @@ impl<'a> SqlBuilder<'a> {
         param: CtsParam,
     ) -> Self {
         let new_schema = config.schema();
-        let param = match config.search {
-            true => {
+        let param = match config.query_mode {
+            QueryMode::Normal => {
+                // 设置查询参数，去掉空间查询相关参数
                 param.search_param()
             }
-            false => {
-                param
-            }
+            QueryMode::Spatial => param,
         };
         Self {
             param,
             table,
             pool,
-            geometry: config.geometry,
+            query_mode: config.query_mode,
             schema: new_schema,
         }
     }
@@ -63,16 +62,19 @@ impl<'a> SqlBuilder<'a> {
     ) -> Self {
         // 简化参数
         let mut param = param.query_param(id);
-        if config.search {
+        // 如果是普通查询，取消空间格式参数
+        if let QueryMode::Normal = config.query_mode {
             param.geo_format = None;
             param.return_geometry = None;
         }
+        // 获取数据库设计模式，默认public
         let new_schema = config.schema();
+        // 创建builder对象
         Self {
             param,
             table,
             pool,
-            geometry: None,
+            query_mode: config.query_mode,
             schema: new_schema,
         }
     }
@@ -103,23 +105,31 @@ impl<'a> SqlBuilder<'a> {
             None => {
                 // 匹配是否有字段
                 match &field {
-                    // 没有字段时需要查询表字段，并且过滤掉空间字段
+                    // 没有字段时需要查询表字段
                     None => self.get_table_columns().await?,
                     Some(fields) => {
-                        // 匹配是否返回空间字段，true单独处理空间字段
-                        match param.return_geometry {
-                            Some(data) if data => {
-                                // 判断是否有空间字段
-                                match &self.geometry {
-                                    None => fields.to_string(),
-                                    Some(geometry_field) => {
-                                        let geometry_field =
-                                            self.handler_geometry_format(geometry_field);
-                                        format!("{fields},{geometry_field}")
+                        // 判断模式
+                        match self.query_mode {
+                            QueryMode::Normal => fields.to_string(),
+                            QueryMode::Spatial => {
+                                // 匹配是否返回空间字段，true单独处理空间字段
+                                match param.return_geometry {
+                                    Some(data) if data => {
+                                        // 获取空间字段
+                                        let geometry = self.get_table_geometry().await;
+                                        // 判断是否有空间字段
+                                        match &geometry {
+                                            None => fields.to_string(),
+                                            Some(geometry_field) => {
+                                                let geometry_field =
+                                                    self.handler_geometry_format(geometry_field);
+                                                format!("{fields},{geometry_field}")
+                                            }
+                                        }
                                     }
+                                    _ => fields.to_string(),
                                 }
                             }
-                            _ => fields.to_string(),
                         }
                     }
                 }
@@ -182,36 +192,62 @@ impl<'a> SqlBuilder<'a> {
         let param = &self.param;
         let table = &self.table;
         let schema = &self.schema;
-        match &self.geometry {
-            None => Ok("*".to_string()),
-            Some(geometry_field) => {
+        // 判断查询方式是那种
+        match &self.query_mode {
+            QueryMode::Normal => Ok("*".to_string()),
+            QueryMode::Spatial => {
                 // 查询表字段
                 let pool = self.pool;
-                let query_columns = format!("SELECT column_name,data_type,is_nullable,column_default FROM information_schema.columns WHERE table_schema = '{}' AND table_name   = '{}'", schema, table);
+                let query_columns = format!("SELECT column_name,udt_name FROM information_schema.columns WHERE table_schema = '{}' AND table_name   = '{}'", schema, table);
+                // 查询表字段
                 let result = sqlx::query_as::<_, Course>(&query_columns)
                     .fetch_all(pool)
                     .await;
+                // 获取表字段列表
                 let result = result.map_err(|err| ParamError(format!("{err}")))?;
-                let mut result_vec = Vec::new();
-                // 收集表名称
-                for row in result {
-                    result_vec.push(row.column_name);
+                let mut geometry_field = String::from("");
+                let mut fields = Vec::new();
+                // 遍历字段并收集字段名称
+                for item in result.into_iter() {
+                    // 判断是否有空间字段
+                    if item.udt_name == "geometry" {
+                        geometry_field = item.column_name;
+                    } else {
+                        fields.push(item.column_name);
+                    }
                 }
-                // 排除空间字段
-                let mut fields: Vec<String> = result_vec
-                    .into_iter()
-                    .filter(|item| item != geometry_field)
-                    .collect();
                 // 判断是返回空间字段
                 if let Some(data) = param.return_geometry {
+                    // 判断是否返回空间字段
                     if data {
+                        if geometry_field.is_empty() {
+                            return Err(ParamError("参数错误，该表不包含空间字段".to_string()));
+                        }
                         // 处理空间字段
-                        let geometry_field = self.handler_geometry_format(geometry_field);
+                        let geometry_field = self.handler_geometry_format(geometry_field.as_str());
                         fields.push(geometry_field);
                     }
                 }
                 Ok(fields.join(","))
             }
+        }
+    }
+
+    // 查询表空间字段，可能有或者没有空间字段，返回option类型
+    async fn get_table_geometry(&self) -> Option<String> {
+        let table = &self.table;
+        let schema = &self.schema;
+        // 查询表字段
+        let pool = self.pool;
+        let query_columns = format!("SELECT column_name,udt_name FROM information_schema.columns WHERE table_schema = '{}' AND table_name = '{}' AND udt_name='geometry'", schema, table);
+        // 查询表字段
+        let result = sqlx::query_as::<_, Course>(&query_columns)
+            .fetch_one(pool)
+            .await;
+
+        match result {
+            Ok(data) => Some(data.column_name),
+            Err(_) => None,
         }
     }
 

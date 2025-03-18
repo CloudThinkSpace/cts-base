@@ -28,9 +28,7 @@ pub enum Single {
 #[derive(Debug, Serialize, Deserialize, FromRow)]
 pub struct Course {
     pub column_name: String,
-    pub data_type: String,
-    pub is_nullable: String,
-    pub column_default: Option<String>,
+    pub udt_name: String,
 }
 
 impl<'de> Deserialize<'de> for CtsValue {

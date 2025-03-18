@@ -31,8 +31,6 @@ impl CtsParam {
         self.group_by = None;
         self.aggregate = None;
         self.page = None;
-        self.geo_format = None;
-        self.return_geometry = None;
         //重新设置条件
         self.filter = Some(vec![
             CtsValue::Single(Single::String("=".to_string())),

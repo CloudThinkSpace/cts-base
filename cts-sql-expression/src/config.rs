@@ -4,11 +4,16 @@ use serde::{Deserialize, Serialize};
 pub struct ExpressionConfig {
     pub schema: Option<String>,
     pub geometry: Option<String>,
+    pub search: bool,
 }
 
 impl ExpressionConfig {
+    pub fn new_normal(schema: Option<String>, geometry: Option<String>) -> Self {
+        Self { schema, geometry, search: true }
+    }
+
     pub fn new(schema: Option<String>, geometry: Option<String>) -> Self {
-        Self { schema, geometry }
+        Self { schema, geometry, search: false }
     }
 
     pub fn schema(&self) -> String {

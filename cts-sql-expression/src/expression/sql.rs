@@ -37,29 +37,19 @@ impl<'a> SqlBuilder<'a> {
         param: CtsParam,
     ) -> Self {
         let new_schema = config.schema();
+        let param = match config.search {
+            true => {
+                param.search_param()
+            }
+            false => {
+                param
+            }
+        };
         Self {
             param,
             table,
             pool,
             geometry: config.geometry,
-            schema: new_schema,
-        }
-    }
-
-    pub fn new_search(
-        pool: &'a Pool<Postgres>,
-        table: String,
-        config: ExpressionConfig,
-        param: CtsParam,
-    ) -> Self {
-        let new_schema = config.schema();
-        // 简化参数
-        let param = param.search_param();
-        Self {
-            param,
-            table,
-            pool,
-            geometry: None,
             schema: new_schema,
         }
     }
@@ -72,7 +62,11 @@ impl<'a> SqlBuilder<'a> {
         id: String,
     ) -> Self {
         // 简化参数
-        let param = param.query_param(id);
+        let mut param = param.query_param(id);
+        if config.search {
+            param.geo_format = None;
+            param.return_geometry = None;
+        }
         let new_schema = config.schema();
         Self {
             param,

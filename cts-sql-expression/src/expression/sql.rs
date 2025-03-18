@@ -1,18 +1,19 @@
-use serde_json::Value;
+use crate::config::ExpressionConfig;
+use crate::error::CtsError;
+use crate::error::CtsError::ParamError;
 use crate::expression::parse::aggregate::AggregateParse;
 use crate::expression::parse::field::FieldParse;
 use crate::expression::parse::filter::FilterParse;
 use crate::expression::parse::group::GroupByParse;
 use crate::expression::parse::order::OrderByParse;
 use crate::expression::parse::page::PageParse;
-use crate::expression::{Course, SqlParse};
-use sqlx::{ Pool, Postgres, Row};
-use cts_pgrow::SerMapPgRow;
-use crate::error::CtsError;
-use crate::error::CtsError::ParamError;
 use crate::expression::query_builder::QueryBuilder;
+use crate::expression::{Course, SqlParse};
 use crate::request::{CtsParam, GeometryFormat};
 use crate::response::{CtsResult, PageValue};
+use cts_pgrow::SerMapPgRow;
+use serde_json::Value;
+use sqlx::{Pool, Postgres, Row};
 
 /// sql构造器
 /// @param 请求参数
@@ -32,16 +33,33 @@ impl<'a> SqlBuilder<'a> {
     pub fn new(
         pool: &'a Pool<Postgres>,
         table: String,
-        schema: Option<String>,
-        geometry: Option<String>,
+        config: ExpressionConfig,
         param: CtsParam,
     ) -> Self {
-        let new_schema = schema.unwrap_or_else(|| "public".to_string());
+        let new_schema = config.schema();
         Self {
             param,
             table,
             pool,
-            geometry,
+            geometry: config.geometry,
+            schema: new_schema,
+        }
+    }
+
+    pub fn new_search(
+        pool: &'a Pool<Postgres>,
+        table: String,
+        config: ExpressionConfig,
+        param: CtsParam,
+    ) -> Self {
+        let new_schema = config.schema();
+        // 简化参数
+        let param = param.search_param();
+        Self {
+            param,
+            table,
+            pool,
+            geometry: None,
             schema: new_schema,
         }
     }
@@ -49,14 +67,19 @@ impl<'a> SqlBuilder<'a> {
     pub fn new_simplify(
         pool: &'a Pool<Postgres>,
         table: String,
+        config: ExpressionConfig,
         param: CtsParam,
-    )-> Self {
+        id: String,
+    ) -> Self {
+        // 简化参数
+        let param = param.query_param(id);
+        let new_schema = config.schema();
         Self {
             param,
             table,
             pool,
             geometry: None,
-            schema: "public".to_string(),
+            schema: new_schema,
         }
     }
 
@@ -76,38 +99,33 @@ impl<'a> SqlBuilder<'a> {
         // page 分页解析
         let page = PageParse(&param.page).parse()?;
         // sql构造对象
-        let mut builder = QueryBuilder::new("select ");
+        let mut builder = QueryBuilder::new_select();
         // table表名
         let table = &self.table;
         // schema 模式
-        let schema =  &self.schema;
+        let schema = &self.schema;
         // 判断是否有分组统计
         let fields = match &group {
             None => {
                 // 匹配是否有字段
                 match &field {
-                    // 没有字段时需要查询表字段，并且过滤掉空间字段进行数据库查询
-                    None => {
-                        self.get_table_columns().await?
-                    }
+                    // 没有字段时需要查询表字段，并且过滤掉空间字段
+                    None => self.get_table_columns().await?,
                     Some(fields) => {
                         // 匹配是否返回空间字段，true单独处理空间字段
                         match param.return_geometry {
                             Some(data) if data => {
                                 // 判断是否有空间字段
                                 match &self.geometry {
-                                    None => {
-                                        fields.to_string()
-                                    }
+                                    None => fields.to_string(),
                                     Some(geometry_field) => {
-                                        let geometry_field = self.handler_geometry_format(geometry_field);
+                                        let geometry_field =
+                                            self.handler_geometry_format(geometry_field);
                                         format!("{fields},{geometry_field}")
                                     }
                                 }
                             }
-                            _ => {
-                                fields.to_string()
-                            }
+                            _ => fields.to_string(),
                         }
                     }
                 }
@@ -122,21 +140,15 @@ impl<'a> SqlBuilder<'a> {
                                 // 解析
                                 groups.to_string()
                             }
-                            Some(agg) => {
-                                agg.to_string()
-                            }
+                            Some(agg) => agg.to_string(),
                         }
                     }
-                    Some(field_str) => {
-                        match aggregate {
-                            None => {
-                                field_str
-                            }
-                            Some(agg) => {
-                                format!("{field_str}, {agg}")
-                            }
+                    Some(field_str) => match aggregate {
+                        None => field_str,
+                        Some(agg) => {
+                            format!("{field_str}, {agg}")
                         }
-                    }
+                    },
                 }
             }
         };
@@ -175,16 +187,16 @@ impl<'a> SqlBuilder<'a> {
     async fn get_table_columns(&self) -> Result<String, CtsError> {
         let param = &self.param;
         let table = &self.table;
-        let schema =  &self.schema;
+        let schema = &self.schema;
         match &self.geometry {
-            None => {
-                Ok("*".to_string())
-            }
+            None => Ok("*".to_string()),
             Some(geometry_field) => {
                 // 查询表字段
                 let pool = self.pool;
                 let query_columns = format!("SELECT column_name,data_type,is_nullable,column_default FROM information_schema.columns WHERE table_schema = '{}' AND table_name   = '{}'", schema, table);
-                let result = sqlx::query_as::<_, Course>(&query_columns).fetch_all(pool).await;
+                let result = sqlx::query_as::<_, Course>(&query_columns)
+                    .fetch_all(pool)
+                    .await;
                 let result = result.map_err(|err| ParamError(format!("{err}")))?;
                 let mut result_vec = Vec::new();
                 // 收集表名称
@@ -192,7 +204,10 @@ impl<'a> SqlBuilder<'a> {
                     result_vec.push(row.column_name);
                 }
                 // 排除空间字段
-                let mut fields: Vec<String> = result_vec.into_iter().filter(|item| item != geometry_field).collect();
+                let mut fields: Vec<String> = result_vec
+                    .into_iter()
+                    .filter(|item| item != geometry_field)
+                    .collect();
                 // 判断是返回空间字段
                 if let Some(data) = param.return_geometry {
                     if data {
@@ -211,9 +226,9 @@ impl<'a> SqlBuilder<'a> {
         let param = &self.param;
         // filter 解析
         let filter = FilterParse(&param.filter).parse()?;
-        let mut  builder = QueryBuilder::new("select count(*) as count");
+        let mut builder = QueryBuilder::new("select count(*) as count");
         let table = &self.table;
-        let schema =  &self.schema;
+        let schema = &self.schema;
         builder.push(" from ");
         builder.push(schema);
         builder.push(".");
@@ -236,25 +251,23 @@ impl<'a> SqlBuilder<'a> {
                 // 将空间字段转换成字符串wkt格式字符串
                 format!(" st_asewkt({geometry_field}) as {geometry_field} ")
             }
-            Some(format) => {
-                match format {
-                    GeometryFormat::GeoJson => {
-                        format!("st_asgeojson({geometry_field}) as {geometry_field} ")
-                    }
-                    GeometryFormat::WKT => {
-                        format!("st_asewkt({geometry_field}) as {geometry_field} ")
-                    }
-                    GeometryFormat::Byte => {
-                        format!("st_asbinary({geometry_field}) as {geometry_field} ")
-                    }
-                    GeometryFormat::Text => {
-                        format!("st_astext({geometry_field}) as {geometry_field} ")
-                    }
-                    GeometryFormat::WKB => {
-                        format!("st_asewkb({geometry_field}) as {geometry_field} ")
-                    }
+            Some(format) => match format {
+                GeometryFormat::GeoJson => {
+                    format!("st_asgeojson({geometry_field}) as {geometry_field} ")
                 }
-            }
+                GeometryFormat::WKT => {
+                    format!("st_asewkt({geometry_field}) as {geometry_field} ")
+                }
+                GeometryFormat::Byte => {
+                    format!("st_asbinary({geometry_field}) as {geometry_field} ")
+                }
+                GeometryFormat::Text => {
+                    format!("st_astext({geometry_field}) as {geometry_field} ")
+                }
+                GeometryFormat::WKB => {
+                    format!("st_asewkb({geometry_field}) as {geometry_field} ")
+                }
+            },
         }
     }
 
@@ -262,7 +275,10 @@ impl<'a> SqlBuilder<'a> {
         // 解析查询语句
         let query = self.parse().await?;
         // 查询数据
-        let list = sqlx::query(&query).fetch_all(self.pool).await.map_err(|err| ParamError(err.to_string()))?;
+        let list = sqlx::query(&query)
+            .fetch_all(self.pool)
+            .await
+            .map_err(|err| ParamError(err.to_string()))?;
         // 判断是否有分组条件，有分组条件不能进行分页
         if self.param.group_by.is_none() {
             // 分页查询
@@ -270,7 +286,10 @@ impl<'a> SqlBuilder<'a> {
                 // 解析分页查询语句
                 let query = self.parse_page_count().await?;
                 // 查询分页结果
-                let result = sqlx::query(&query).fetch_one(self.pool).await.map_err(|err| ParamError(err.to_string()))?;
+                let result = sqlx::query(&query)
+                    .fetch_one(self.pool)
+                    .await
+                    .map_err(|err| ParamError(err.to_string()))?;
                 let total = result.get::<i64, _>(0);
                 // 计算页数
                 let pages = (total as f64 * 1.0 / page_param.page_size as f64).ceil() as i64;
@@ -296,7 +315,10 @@ impl<'a> SqlBuilder<'a> {
         // 解析查询语句
         let query = self.parse().await?;
         // 查询数据
-        let row = sqlx::query(&query).fetch_one(self.pool).await.map_err(|err| ParamError(err.to_string()))?;
+        let row = sqlx::query(&query)
+            .fetch_one(self.pool)
+            .await
+            .map_err(|err| ParamError(err.to_string()))?;
         let row_map = SerMapPgRow::from(row);
         let value = row_map.into();
         Ok(value)

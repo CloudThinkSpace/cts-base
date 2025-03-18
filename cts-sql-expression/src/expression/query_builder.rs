@@ -13,6 +13,12 @@ impl QueryBuilder {
         }
     }
 
+    pub fn new_select() -> Self{
+        QueryBuilder{
+            query: String::from("select "),
+        }
+    }
+
     pub fn push(&mut self, sql: impl Display) -> &mut Self {
         write!(self.query, "{sql}").expect("error formatting `sql`");
         self

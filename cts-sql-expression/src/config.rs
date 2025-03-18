@@ -3,7 +3,6 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug,Serialize,Deserialize,Clone)]
 pub struct ExpressionConfig {
     pub schema: Option<String>,
-    pub geometry: Option<String>,
     pub query_mode: QueryMode,
 }
 
@@ -14,12 +13,12 @@ pub enum QueryMode {
 }
 
 impl ExpressionConfig {
-    pub fn new_normal(schema: Option<String>, geometry: Option<String>) -> Self {
-        Self { schema, geometry, query_mode: QueryMode::Normal }
+    pub fn new_normal(schema: Option<String>) -> Self {
+        Self { schema, query_mode: QueryMode::Normal }
     }
 
-    pub fn new(schema: Option<String>, geometry: Option<String>) -> Self {
-        Self { schema, geometry, query_mode: QueryMode::Spatial }
+    pub fn new(schema: Option<String>) -> Self {
+        Self { schema, query_mode: QueryMode::Spatial }
     }
 
     pub fn schema(&self) -> String {

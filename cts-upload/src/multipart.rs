@@ -13,7 +13,7 @@ pub async  fn write_multipart_oss(mut multipart: Multipart, root_path:&str, oss_
     while let Some(field) = multipart.next_field().await.unwrap() {
         // 处理文件
         if field.file_name().is_some() {
-            let cts_file = stream_to_oss(field,root_path.to_string(),oss_config).await?;
+            let cts_file = stream_to_oss(field,root_path.to_string(),&oss_config).await?;
             data_vec.push(cts_file);
         }
     }

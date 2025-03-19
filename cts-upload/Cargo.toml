@@ -16,6 +16,3 @@ aliyun-oss-rust-sdk.workspace = true
 uuid = {workspace = true, features = ["v4"]}
 chrono.workspace = true
 tokio.workspace = true
-
-[features]
-multipart = []

@@ -7,15 +7,15 @@ use axum::body::Bytes;
 use uuid::Uuid;
 use crate::utils::time_util::create_time_dir;
 
-pub struct CtsOssWriter {
+pub struct CtsOssWriter<'a> {
     file_name: String,
     root_path: String,
     data: Bytes,
-    config: OssConfig,
+    config: &'a OssConfig,
 }
 
-impl CtsOssWriter {
-    pub fn new(file_name: String, root_path: String, data: Bytes, config: OssConfig) -> Self {
+impl<'a> CtsOssWriter<'a> {
+    pub fn new(file_name: String, root_path: String, data: Bytes, config: &'a OssConfig) -> Self {
         Self {
             file_name,
             root_path,
@@ -24,7 +24,7 @@ impl CtsOssWriter {
         }
     }
 }
-impl CtsWriter for CtsOssWriter {
+impl CtsWriter for CtsOssWriter<'_> {
     async fn write(&self) -> Result<(String, String), CtsUpLoadError> {
         let oss = OSS::new(
             &self.config.key_id,

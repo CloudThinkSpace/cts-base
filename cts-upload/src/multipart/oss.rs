@@ -8,7 +8,7 @@ use axum::extract::multipart::Field;
 pub async fn stream_to_oss(
     stream: Field<'_>,
     root_path: String,
-    oss_config: OssConfig,
+    oss_config: &OssConfig,
 ) -> Result<CtsFile, CtsUpLoadError> {
     let file_name = match &stream.file_name() {
         Some(data) => data.to_string(),

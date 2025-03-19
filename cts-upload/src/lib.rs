@@ -3,7 +3,6 @@ use serde::Deserialize;
 pub mod read;
 pub mod write;
 pub mod error;
-#[cfg(feature = "multipart")]
 pub mod multipart;
 pub mod utils;
 

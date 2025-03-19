@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = [ "cts-pgrow", "cts-sql-expression","response_utils"]
+members = [ "cts-pgrow", "cts-sql-expression", "cts-upload","response_utils"]
 
 [workspace.package]
 authors = ["tanghy <tanghy@cloudthink.space>"]
@@ -9,7 +9,7 @@ publish = false
 edition = "2021"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/maplibre/martin"
-rust-version = "1.77.2"
+rust-version = "1.85.0"
 
 [workspace.dependencies]
 cts-pgrow = {path = "./cts-pgrow", version = "0.1.1"}
@@ -20,4 +20,6 @@ axum = "0.8.1"
 mime = "0.3.17"
 chrono = "0.4.40"
 sqlx = "0.8.3"
+aliyun-oss-rust-sdk = "0.2.1"
+uuid = "1.16.0"
 tokio = "1.44.1"

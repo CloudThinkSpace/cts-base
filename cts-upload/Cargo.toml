@@ -1,0 +1,21 @@
+[package]
+name = "cts-upload"
+version = "0.1.0"
+authors.workspace = true
+homepage.workspace = true
+publish.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+serde.workspace = true
+axum = {workspace = true, features = ["multipart"]}
+aliyun-oss-rust-sdk.workspace = true
+uuid = {workspace = true, features = ["v4"]}
+chrono.workspace = true
+tokio.workspace = true
+
+[features]
+multipart = []

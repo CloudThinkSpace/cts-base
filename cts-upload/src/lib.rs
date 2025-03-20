@@ -1,8 +1,10 @@
 use serde::Deserialize;
-
+#[cfg(feature = "reader")]
 pub mod read;
+#[cfg(feature = "writer")]
 pub mod write;
 pub mod error;
+#[cfg(feature = "multipart")]
 pub mod multipart;
 pub mod utils;
 pub mod header;

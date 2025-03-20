@@ -5,6 +5,7 @@ pub mod write;
 pub mod error;
 pub mod multipart;
 pub mod utils;
+mod header;
 
 pub enum ModeType {
     File,

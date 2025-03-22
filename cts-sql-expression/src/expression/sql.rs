@@ -282,7 +282,7 @@ impl<'a> SqlBuilder<'a> {
         match geo_format {
             None => {
                 // 将空间字段转换成字符串wkt格式字符串
-                format!(" st_asewkt({geometry_field}) as {geometry_field} ")
+                format!("st_asgeojson({geometry_field}) as {geometry_field} ")
             }
             Some(format) => match format {
                 GeometryFormat::GeoJson => {

@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use crate::expression::{CtsValue, Single};
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct CtsParam {
     pub filter: Option<Vec<CtsValue>>,

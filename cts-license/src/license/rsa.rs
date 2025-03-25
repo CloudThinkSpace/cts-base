@@ -41,7 +41,7 @@ impl License {
         Self {
             server: server.to_string(),
             name: name.to_string(),
-            expire: expire.timestamp(),
+            expire: expire.timestamp_millis(),
         }
     }
 
@@ -131,7 +131,7 @@ fn read_license(path: &str) -> Result<String, String> {
     // 去除回车字符串
     let license = licence
         .chars()
-        .filter(|&c| c != '\n' || c != '\t')
+        .filter(|&c| c != '\n')
         .collect::<String>();
     Ok(license)
 }

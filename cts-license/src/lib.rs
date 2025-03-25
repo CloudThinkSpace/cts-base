@@ -12,3 +12,14 @@ fn add_newlines(s: &str, len: usize) -> String {
             acc
         })
 }
+
+
+#[cfg(test)]
+mod tests {
+    use crate::license::rsa::License;
+    use super::*;
+    #[test]
+    fn test_license() {
+        License::check_license("./license.lic", "FeatureServer").expect("Valid");
+    }
+}

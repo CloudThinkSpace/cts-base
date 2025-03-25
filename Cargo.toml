@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = [ "cts-pgrow", "cts-sql-expression", "cts-upload","response_utils"]
+members = ["cts-license", "cts-pgrow", "cts-sql-expression", "cts-upload","response_utils"]
 
 [workspace.package]
 authors = ["tanghy <tanghy@cloudthink.space>"]
@@ -23,3 +23,9 @@ sqlx = "0.8.3"
 aliyun-oss-rust-sdk = "0.2.1"
 uuid = "1.16.0"
 tokio = "1.44.1"
+ring = "0.17.14"
+rsa = "0.9.8"
+hex = "0.4.3"
+rand = "0.8.5"
+log = "0.4.27"
+clap = "4.5.32"

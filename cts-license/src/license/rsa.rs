@@ -1,6 +1,6 @@
 use crate::add_newlines;
 use crate::license::{Error, PRIV_KEY, PUB_KEY};
-use chrono::{Days, Local};
+use chrono::{DateTime, Days, Local, TimeZone};
 use log::{error, info};
 use rsa::pkcs1::{
     DecodeRsaPrivateKey, DecodeRsaPublicKey, EncodeRsaPrivateKey, EncodeRsaPublicKey,
@@ -91,7 +91,15 @@ impl License {
         // 判断是否过期,并且名称是否一致
         match license.expire > current_time && server == license.server {
             true => {
-                info!("\n{}", logo());
+                let logo_info = logo();
+                // 时间戳转时间
+                let date_time: DateTime<Local> = DateTime::from_timestamp_millis(license.expire)
+                    .unwrap()
+                    .into();
+                // 时间转字符串
+                let date_str = date_time.format("%Y-%m-%d %H:%M:%S");
+                let logo_msg = format!("{}\n     许可有效期至：{}", logo_info, date_str);
+                info!("\n{}", logo_msg);
                 Ok(())
             }
             false => {
@@ -129,10 +137,7 @@ fn read_license(path: &str) -> Result<String, String> {
         false => license,
     };
     // 去除回车字符串
-    let license = licence
-        .chars()
-        .filter(|&c| c != '\n')
-        .collect::<String>();
+    let license = licence.chars().filter(|&c| c != '\n').collect::<String>();
     Ok(license)
 }
 

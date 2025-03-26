@@ -162,11 +162,22 @@ fn logo() -> String {
 mod tests {
     use super::*;
     use chrono::Months;
+    use tracing_subscriber::fmt;
+    use tracing_subscriber::layer::SubscriberExt;
+    use tracing_subscriber::util::SubscriberInitExt;
+
     #[test]
     fn test_read_licence() {
         let now = Local::now();
         // 默认过期时间1个月
         let expire = now.checked_add_months(Months::new(1)).unwrap();
         println!("{:?}", expire);
+    }
+    #[test]
+    fn test_check_license() {
+        tracing_subscriber::registry()
+            .with(fmt::layer())
+            .init();
+        License::check_license("./license.lic", "FeatureServer").expect("Valid");
     }
 }

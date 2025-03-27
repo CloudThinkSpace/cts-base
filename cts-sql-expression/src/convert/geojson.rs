@@ -59,9 +59,7 @@ impl PgRowConvert for GeoJsonConvert {
 fn handler_result(data: CtsResult) -> Value {
     match data {
         CtsResult::Single(single) => {
-            let mut result = Vec::new();
-            result.push(single);
-            handler_result(CtsResult::List(result))
+            handler_result(CtsResult::List(vec![single]))
         }
         CtsResult::List(list) => {
             let mut result = Vec::new();

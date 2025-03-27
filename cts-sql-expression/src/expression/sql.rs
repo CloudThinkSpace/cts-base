@@ -9,9 +9,8 @@ use crate::expression::parse::order::OrderByParse;
 use crate::expression::parse::page::PageParse;
 use crate::expression::query_builder::QueryBuilder;
 use crate::expression::{Course, SqlParse, GEOMETRY};
-use crate::request::{CtsParam, GeometryFormat};
+use crate::request::{CtsFormat, CtsParam, GeometryFormat};
 use crate::response::{CtsResult, PageValue};
-use cts_pgrow::SerMapPgRow;
 use serde_json::Value;
 use sqlx::{Pool, Postgres, Row};
 
@@ -299,7 +298,9 @@ impl<'a> SqlBuilder<'a> {
         }
     }
 
-    pub async fn query(&self) -> Result<CtsResult, CtsError> {
+    pub async fn query(&mut self) -> Result<Value, CtsError> {
+        // 格式处理
+        let format = self.format();
         // 解析查询语句
         let query = self.parse().await?;
         // 查询数据
@@ -328,18 +329,20 @@ impl<'a> SqlBuilder<'a> {
                     total,
                     list,
                 };
-                Ok(CtsResult::Page(page_value))
+                Ok(CtsResult::Page(page_value).to_value(format))
             } else {
                 // 返回成功数据列表
-                Ok(CtsResult::List(list))
+                Ok(CtsResult::List(list).to_value(format))
             }
         } else {
             // 返回成功数据列表
-            Ok(CtsResult::List(list))
+            Ok(CtsResult::List(list).to_value(format))
         }
     }
 
-    pub async fn query_one(&self) -> Result<Value, CtsError> {
+    pub async fn query_one(&mut self) -> Result<Value, CtsError> {
+        // 格式处理
+        let format = self.format();
         // 解析查询语句
         let query = self.parse().await?;
         // 查询数据
@@ -347,8 +350,24 @@ impl<'a> SqlBuilder<'a> {
             .fetch_one(self.pool)
             .await
             .map_err(|err| ParamError(err.to_string()))?;
-        let row_map = SerMapPgRow::from(row);
-        let value = row_map.into();
-        Ok(value)
+
+        Ok(CtsResult::Single(row).to_value(format))
+    }
+
+    fn format(&mut self) -> CtsFormat {
+        // 判断格式
+        match &self.param.format {
+            None => CtsFormat::Json,
+            Some(data) => {
+                match data {
+                    CtsFormat::Json => CtsFormat::Json,
+                    CtsFormat::GeoJson => {
+                        self.param.geo_format = Some(GeometryFormat::GeoJson);
+                        CtsFormat::GeoJson
+                    }
+                    CtsFormat::CSV => CtsFormat::CSV,
+                }
+            }
+        }
     }
 }

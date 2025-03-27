@@ -99,9 +99,12 @@ impl License {
                 Ok(())
             }
             false => {
-                error!("\n          ========================================================================\n
-                                                            许可无效，请重新申请许可\n
-                                ===========================================================================================");
+                error!("\n
+          *******************************************************************************************
+          *                                                                                         *
+          *                                     许可无效，请重新申请许可                                *
+          *                                                                                         *
+          *******************************************************************************************\n");
                 Err(Error::LicenceExpired(
                     "许可失效，请重新申请许可".to_string(),
                 ))
@@ -166,11 +169,11 @@ fn logo() -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use chrono::Months;
+    use chrono::{Local, Months};
     use tracing_subscriber::fmt;
     use tracing_subscriber::layer::SubscriberExt;
     use tracing_subscriber::util::SubscriberInitExt;
+    use crate::license::rsa::License;
 
     #[test]
     fn test_read_licence() {

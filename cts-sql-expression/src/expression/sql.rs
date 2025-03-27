@@ -362,7 +362,10 @@ impl<'a> SqlBuilder<'a> {
                 match data {
                     CtsFormat::Json => CtsFormat::Json,
                     CtsFormat::GeoJson => {
+                        // 设置geojson格式返回
                         self.param.geo_format = Some(GeometryFormat::GeoJson);
+                        // 设置返回空间字段
+                        self.param.return_geometry = Some(true);
                         CtsFormat::GeoJson
                     }
                     CtsFormat::CSV => CtsFormat::CSV,

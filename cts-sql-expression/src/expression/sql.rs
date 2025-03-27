@@ -8,7 +8,7 @@ use crate::expression::parse::group::GroupByParse;
 use crate::expression::parse::order::OrderByParse;
 use crate::expression::parse::page::PageParse;
 use crate::expression::query_builder::QueryBuilder;
-use crate::expression::{Course, SqlParse};
+use crate::expression::{Course, SqlParse, GEOMETRY};
 use crate::request::{CtsParam, GeometryFormat};
 use crate::response::{CtsResult, PageValue};
 use cts_pgrow::SerMapPgRow;
@@ -277,23 +277,23 @@ impl<'a> SqlBuilder<'a> {
         match geo_format {
             None => {
                 // 将空间字段转换成字符串wkt格式字符串
-                format!("st_asgeojson({geometry_field}) as geom ")
+                format!("st_asgeojson({geometry_field}) as {GEOMETRY} ")
             }
             Some(format) => match format {
                 GeometryFormat::GeoJson => {
-                    format!("st_asgeojson({geometry_field}) as geom ")
+                    format!("st_asgeojson({geometry_field}) as {GEOMETRY} ")
                 }
                 GeometryFormat::WKT => {
-                    format!("st_asewkt({geometry_field}) as geom ")
+                    format!("st_asewkt({geometry_field}) as {GEOMETRY} ")
                 }
                 GeometryFormat::Byte => {
-                    format!("st_asbinary({geometry_field}) as geom ")
+                    format!("st_asbinary({geometry_field}) as {GEOMETRY} ")
                 }
                 GeometryFormat::Text => {
-                    format!("st_astext({geometry_field}) as geom ")
+                    format!("st_astext({geometry_field}) as {GEOMETRY} ")
                 }
                 GeometryFormat::WKB => {
-                    format!("st_asewkb({geometry_field}) as geom ")
+                    format!("st_asewkb({geometry_field}) as {GEOMETRY} ")
                 }
             },
         }

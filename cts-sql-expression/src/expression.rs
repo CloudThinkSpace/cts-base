@@ -9,6 +9,8 @@ use sqlx::FromRow;
 use crate::error::CtsError;
 use crate::error::CtsError::ParamError;
 
+pub static GEOMETRY: &str = "geom";
+
 
 
 #[derive(Debug, Serialize)]

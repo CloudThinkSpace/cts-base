@@ -6,4 +6,7 @@ fn demo() -> impl IntoResponse {
     ResResponse::with_success("")
 }
 ```
-## 
+## cts-license
+```shell
+cargo install --path cts-license 
+```

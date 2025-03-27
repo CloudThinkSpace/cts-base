@@ -1,10 +1,23 @@
+use crate::convert::PgRowConvert;
 use cts_pgrow::SerMapPgRow;
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
 use sqlx::postgres::PgRow;
-use crate::convert::PgRowConvert;
 
-pub struct GeoJsonConvert(pub String);
+pub struct GeoJsonConvert {
+    geom: String,
+}
+impl GeoJsonConvert {
+    pub fn new_geom(geom: String) -> Self {
+        Self { geom }
+    }
+
+    pub fn new() -> Self {
+        Self {
+            geom: "geom".to_string(),
+        }
+    }
+}
 
 #[derive(Debug, Serialize, Deserialize)]
 struct Feature {
@@ -43,7 +56,7 @@ impl PgRowConvert for GeoJsonConvert {
                 // 遍历map对象
                 for (key, value) in map.into_iter() {
                     // 判断是否为空间字段
-                    if key == self.0 {
+                    if key == self.geom {
                         if let Value::String(data) = value {
                             geometry = serde_json::from_str(&data).unwrap()
                         }

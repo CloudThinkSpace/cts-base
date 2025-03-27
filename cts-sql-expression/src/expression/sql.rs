@@ -118,14 +118,12 @@ impl<'a> SqlBuilder<'a> {
                                         // 获取空间字段
                                         let geometry = self.get_table_geometry().await;
                                         // 判断是否有空间字段
-                                        match &geometry {
-                                            None => fields.to_string(),
-                                            Some(geometry_field) => {
-                                                let geometry_field =
-                                                    self.handler_geometry_format(geometry_field);
-                                                format!("{fields},{geometry_field}")
-                                            }
-                                        }
+                                        let geometry_field = &geometry.ok_or(ParamError(
+                                            "参数错误，该数据不包含空间字段".to_string(),
+                                        ))?;
+                                        let geometry_field =
+                                            self.handler_geometry_format(geometry_field);
+                                        format!("{fields},{geometry_field}")
                                     }
                                     _ => fields.to_string(),
                                 }
@@ -205,7 +203,9 @@ impl<'a> SqlBuilder<'a> {
                     .await;
                 // 获取表字段列表
                 let result = result.map_err(|err| ParamError(format!("{err}")))?;
+                // 空间字段
                 let mut geometry_field = None;
+                // 字段列表
                 let mut fields = Vec::new();
                 // 遍历字段并收集字段名称
                 for item in result.into_iter() {
@@ -217,19 +217,14 @@ impl<'a> SqlBuilder<'a> {
                     }
                 }
                 // 判断是返回空间字段
-                if let Some(data) = param.return_geometry {
+                if matches!(param.return_geometry, Some(true)) {
                     // 判断是否返回空间字段
-                    if data {
-                        if geometry_field.is_none() {
-                            return Err(ParamError("参数错误，该表不包含空间字段".to_string()));
-                        } else {
-                            // 处理空间字段
-                            let geometry_field =
-                                self.handler_geometry_format(geometry_field.unwrap().as_str());
-                            // 添加空间字段
-                            fields.push(geometry_field);
-                        }
-                    }
+                    let geom = geometry_field
+                        .ok_or(ParamError("参数错误，该数据不包含空间字段".to_string()))?;
+                    // 处理空间字段
+                    let geometry_field = self.handler_geometry_format(geom.as_str());
+                    // 添加空间字段
+                    fields.push(geometry_field);
                 }
                 Ok(fields.join(","))
             }
@@ -282,23 +277,23 @@ impl<'a> SqlBuilder<'a> {
         match geo_format {
             None => {
                 // 将空间字段转换成字符串wkt格式字符串
-                format!("st_asgeojson({geometry_field}) as {geometry_field} ")
+                format!("st_asgeojson({geometry_field}) as geom ")
             }
             Some(format) => match format {
                 GeometryFormat::GeoJson => {
-                    format!("st_asgeojson({geometry_field}) as {geometry_field} ")
+                    format!("st_asgeojson({geometry_field}) as geom ")
                 }
                 GeometryFormat::WKT => {
-                    format!("st_asewkt({geometry_field}) as {geometry_field} ")
+                    format!("st_asewkt({geometry_field}) as geom ")
                 }
                 GeometryFormat::Byte => {
-                    format!("st_asbinary({geometry_field}) as {geometry_field} ")
+                    format!("st_asbinary({geometry_field}) as geom ")
                 }
                 GeometryFormat::Text => {
-                    format!("st_astext({geometry_field}) as {geometry_field} ")
+                    format!("st_astext({geometry_field}) as geom ")
                 }
                 GeometryFormat::WKB => {
-                    format!("st_asewkb({geometry_field}) as {geometry_field} ")
+                    format!("st_asewkb({geometry_field}) as geom ")
                 }
             },
         }

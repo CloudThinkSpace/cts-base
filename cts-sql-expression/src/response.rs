@@ -22,13 +22,11 @@ pub struct PageValue {
 }
 
 impl CtsResult {
-    pub fn to_value(self, format: CtsFormat, geometry: Option<String>) -> Value {
+    pub fn to_value(self, format: CtsFormat) -> Value {
         // 配置转换器
         let row_convert: Box<dyn PgRowConvert> = match format {
             // 匹配 类型是GeoJson 并且空间字段不为空
-            CtsFormat::GeoJson => Box::new(GeoJsonConvert(
-                geometry.unwrap_or_else(|| "geom".to_string())
-            )),
+            CtsFormat::GeoJson => Box::new(GeoJsonConvert::new()),
             CtsFormat::CSV => Box::new(CsvConvert),
             _ => Box::new(JsonConvert),
         };
@@ -54,6 +52,6 @@ impl CtsResult {
     }
 
     pub fn to_json(self) -> Value {
-        self.to_value(CtsFormat::Json, None)
+        self.to_value(CtsFormat::Json)
     }
 }

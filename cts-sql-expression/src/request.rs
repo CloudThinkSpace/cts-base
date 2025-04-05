@@ -9,7 +9,7 @@ pub struct CtsParam {
     pub out_fields: Option<Vec<CtsValue>>,
     pub aggregate: Option<Vec<CtsValue>>,
     pub return_geometry: Option<bool>,
-    pub order: Option<Vec<CtsValue>>,
+    pub order_by: Option<Vec<CtsValue>>,
     pub page: Option<PageParam>,
     pub geo_format: Option<GeometryFormat>,
     pub format: Option<CtsFormat>,

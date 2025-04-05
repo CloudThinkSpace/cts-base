@@ -90,7 +90,7 @@ impl<'a> SqlBuilder<'a> {
         // aggregate 解析
         let aggregate = AggregateParse(&param.aggregate).parse()?;
         // order by 解析
-        let order = OrderByParse(&param.order).parse()?;
+        let order = OrderByParse(&param.order_by).parse()?;
         // page 分页解析
         let page = PageParse(&param.page).parse()?;
         // sql构造对象

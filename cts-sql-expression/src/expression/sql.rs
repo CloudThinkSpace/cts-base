@@ -99,8 +99,8 @@ impl<'a> SqlBuilder<'a> {
         let table = &self.table;
         // schema 模式
         let schema = &self.schema;
-        // 判断是否有分组统计
-        let fields = match &group {
+        // 判断是否有统计参数
+        let fields = match &aggregate {
             None => {
                 // 匹配是否有字段
                 match &field {
@@ -131,25 +131,13 @@ impl<'a> SqlBuilder<'a> {
                     }
                 }
             }
-            Some(groups) => {
+            Some(agg) => {
                 // 判断字段是否有数据
                 match field {
-                    None => {
-                        // 处理统计函数Ï
-                        match &aggregate {
-                            None => {
-                                // 解析
-                                groups.to_string()
-                            }
-                            Some(agg) => agg.to_string(),
-                        }
+                    None => agg.to_string(),
+                    Some(field_str) => {
+                        format!("{field_str}, {agg}")
                     }
-                    Some(field_str) => match aggregate {
-                        None => field_str,
-                        Some(agg) => {
-                            format!("{field_str}, {agg}")
-                        }
-                    },
                 }
             }
         };
@@ -308,8 +296,8 @@ impl<'a> SqlBuilder<'a> {
             .fetch_all(self.pool)
             .await
             .map_err(|err| ParamError(err.to_string()))?;
-        // 判断是否有分组条件，有分组条件不能进行分页
-        if self.param.group_by.is_none() {
+        // 判断是否有统计条件，有统计条件不能进行分页
+        if self.param.aggregate.is_none() {
             // 分页查询
             if let Some(page_param) = &self.param.page {
                 // 解析分页查询语句

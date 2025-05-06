@@ -55,8 +55,6 @@ impl<'a> SaveSqlBuilder<'a> {
         sql.pop();
         sql.push_str(") VALUES (");
         sql.push_str(&values);
-        // 弹出最后一个空格
-        sql.pop();
         sql.push_str(")");
         sql
     }
@@ -107,7 +105,6 @@ mod tests {
         sql.pop();
         sql.push_str(") VALUES (");
         sql.push_str(&values);
-        sql.pop();
         sql.push_str(")");
         println!("{}", sql);
     }

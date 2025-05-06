@@ -1,5 +1,8 @@
 pub mod parse;
 pub mod sql;
+pub mod save_sql;
+pub mod update_sql;
+pub mod delete_sql;
 mod query_builder;
 
 use serde::de::Error;
@@ -73,6 +76,3 @@ pub trait SqlParse
 {
     fn parse(&self) -> Result<Option<String>, CtsError>;
 }
-
-
-

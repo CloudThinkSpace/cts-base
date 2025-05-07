@@ -1,24 +1,24 @@
-pub mod parse;
-pub mod sql;
-pub mod save_sql;
-pub mod update_sql;
 pub mod delete_sql;
+pub mod parse;
 mod query_builder;
+pub mod save_sql;
+pub mod sql;
+pub mod update_sql;
 
+use crate::error::CtsError;
+use crate::error::CtsError::ParamError;
 use serde::de::Error;
 use serde::{Deserialize, Deserializer, Serialize};
 use serde_json::Value;
 use sqlx::FromRow;
-use crate::error::CtsError;
-use crate::error::CtsError::ParamError;
 
 pub static GEOMETRY: &str = "geom";
 
-pub static CREATED_AT:&str = "created_at";
+pub static CREATED_AT: &str = "created_at";
 
-pub static UPDATED_AT:&str = "updated_at";
+pub static UPDATED_AT: &str = "updated_at";
 
-
+pub static ID: &str = "ID";
 
 #[derive(Debug, Serialize)]
 pub enum CtsValue {
@@ -46,9 +46,7 @@ impl<'de> Deserialize<'de> for CtsValue {
         D: Deserializer<'de>,
     {
         let value: Value = Deserialize::deserialize(deserializer)?;
-        handler_value(value).map_err(|_err| {
-            Error::custom("类型解析错误")
-        })
+        handler_value(value).map_err(|_err| Error::custom("类型解析错误"))
     }
 }
 
@@ -76,7 +74,6 @@ fn handler_value(data: Value) -> Result<CtsValue, CtsError> {
     Ok(value)
 }
 
-pub trait SqlParse
-{
+pub trait SqlParse {
     fn parse(&self) -> Result<Option<String>, CtsError>;
 }

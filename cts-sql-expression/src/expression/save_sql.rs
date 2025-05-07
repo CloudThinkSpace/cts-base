@@ -5,7 +5,7 @@ use serde_json::Value;
 use sqlx::{Pool, Postgres};
 use uuid::Uuid;
 
-use super::{CREATED_AT, UPDATED_AT};
+use super::{CREATED_AT, ID, UPDATED_AT};
 
 /// save sql构造器
 /// @param 请求参数
@@ -17,6 +17,7 @@ pub struct SaveSqlBuilder<'a> {
     pool: &'a Pool<Postgres>,
     table: String,
     schema: String,
+    id: String,
 }
 
 impl<'a> SaveSqlBuilder<'a> {
@@ -29,7 +30,7 @@ impl<'a> SaveSqlBuilder<'a> {
         // 创建
         let uuid_str = Uuid::new_v4().to_string();
         // 插入id字段，如果存在，替换成uuid字符串
-        data.insert("id".to_string(), Value::String(uuid_str));
+        data.insert(ID.to_string(), Value::String(uuid_str.to_string()));
         // 插入日期字段
         let date = Local::now().to_string();
         data.insert(CREATED_AT.to_string(), Value::String(date.to_string()));
@@ -39,6 +40,7 @@ impl<'a> SaveSqlBuilder<'a> {
             pool,
             table,
             schema,
+            id: uuid_str,
         }
     }
 
@@ -66,10 +68,10 @@ impl<'a> SaveSqlBuilder<'a> {
         sql
     }
 
-    pub async fn execute(&self) -> Result<u64, sqlx::Error> {
+    pub async fn execute(&self) -> Result<String, sqlx::Error> {
         let sql = self.build();
-        let result = sqlx::query(&sql).execute(self.pool).await?;
-        Ok(result.rows_affected())
+        let _ = sqlx::query(&sql).execute(self.pool).await?;
+        Ok(self.id.to_string())
     }
 }
 

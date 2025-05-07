@@ -17,6 +17,6 @@ pub async fn stream_to_oss(
     // 数据
     let body = stream.bytes().await.unwrap();
     let writer = CtsOssWriter::new(file_name, root_path, body, oss_config);
-    let (filename, path) = writer.write().await?;
-    Ok(CtsFile { filename, path })
+    let cts_file= writer.write().await?;
+    Ok(cts_file)
 }

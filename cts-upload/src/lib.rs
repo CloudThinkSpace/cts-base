@@ -1,13 +1,13 @@
-use serde::Deserialize;
-#[cfg(feature = "reader")]
-pub mod read;
-#[cfg(feature = "writer")]
-pub mod write;
+use serde::{Deserialize, Serialize};
 pub mod error;
+pub mod header;
 #[cfg(feature = "multipart")]
 pub mod multipart;
+#[cfg(feature = "reader")]
+pub mod read;
 pub mod utils;
-pub mod header;
+#[cfg(feature = "writer")]
+pub mod write;
 
 pub enum ModeType {
     File,
@@ -22,8 +22,40 @@ pub struct OssConfig {
     pub bucket: String,
 }
 
-pub fn get_ext(filename: &str) -> String {
+#[derive(Serialize, Deserialize, Debug)]
+pub struct CtsFile {
+    pub path: String,
+    pub filename: String,
+    pub name: String,
+    pub ext: String,
+}
+
+impl CtsFile {
+    pub fn new(filename: String, path: String, name: String, ext: String) -> Self {
+        Self {
+            path,
+            filename,
+            name,
+            ext,
+        }
+    }
+}
+
+pub fn get_ext(filename: &str) -> (String, String) {
     let index = filename.find('.').unwrap();
     let ext = &filename[index + 1..];
-    ext.to_string()
+    let name = &filename[..index];
+    (name.to_string(), ext.to_string())
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::get_ext;
+
+    #[test]
+    fn test_get_ext() {
+        let filename = "aaa.xls";
+        let (a,b)  = get_ext(filename);
+        println!("name:{},ext:{}", a, b);
+    }
 }

@@ -15,6 +15,6 @@ pub async fn stream_to_file(
     // 数据
     let body = stream.bytes().await.unwrap();
     let writer = CtsFileWriter::new(file_name, root_path, body);
-    let (filename, path) = writer.write().await?;
-    Ok(CtsFile { filename, path })
+    let cts_file = writer.write().await?;
+    Ok(cts_file)
 }

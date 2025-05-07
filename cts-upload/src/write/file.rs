@@ -1,7 +1,7 @@
 use crate::error::CtsUpLoadError;
-use crate::get_ext;
 use crate::utils::time_util::create_time_dir;
 use crate::write::CtsWriter;
+use crate::{get_ext, CtsFile};
 use axum::body::Bytes;
 use std::fs::create_dir_all;
 use tokio::fs::File;
@@ -24,16 +24,16 @@ impl CtsFileWriter {
     }
 }
 impl CtsWriter for CtsFileWriter {
-    async fn write(&self) -> Result<(String, String), CtsUpLoadError> {
+    async fn write(&self) -> Result<CtsFile, CtsUpLoadError> {
         // 创建日期路径字符串
         let file_path = create_time_dir(&self.root_path);
         // 创建日期目录
         create_dir_all(&file_path).map_err(|err| CtsUpLoadError::WriteError(err.to_string()))?;
         let uuid = Uuid::new_v4().to_string();
-        // 扩展名
-        let exp = get_ext(&self.file_name);
+        // 文件名和扩展名
+        let (name, ext) = get_ext(&self.file_name);
         // 文件路径
-        let file_name_path = format!("{file_path}/{uuid}.{exp}");
+        let file_name_path = format!("{file_path}/{uuid}.{}", &ext);
         // 打开文件（如果文件不存在则创建）
         let mut file = File::create(&file_name_path)
             .await
@@ -46,7 +46,13 @@ impl CtsWriter for CtsFileWriter {
         file.flush()
             .await
             .map_err(|err| CtsUpLoadError::WriteError(err.to_string()))?;
+
         // 组织数据
-        Ok((file_name_path, self.file_name.to_string()))
+        Ok(CtsFile::new(
+            self.file_name.to_string(),
+            file_name_path,
+            name,
+            ext,
+        ))
     }
 }

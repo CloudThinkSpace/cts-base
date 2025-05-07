@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use chrono::{naive, Local};
+use chrono::Local;
 use serde_json::Value;
 use sqlx::{Pool, Postgres};
 use uuid::Uuid;

@@ -18,6 +18,7 @@ chrono.workspace = true
 tokio.workspace = true
 
 [features]
+ default = ["multipart","writer","reader"]
 multipart = ["axum/multipart"]
 writer = ["dep:uuid", "uuid/v4"]
 reader = ["dep:uuid", "uuid/v4"]

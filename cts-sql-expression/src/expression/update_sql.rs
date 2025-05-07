@@ -4,7 +4,7 @@ use chrono::Local;
 use serde_json::Value;
 use sqlx::{Pool, Postgres};
 
-use super::UPDATED_AT;
+use super::{CREATED_AT, UPDATED_AT};
 
 /// update sql构造器
 /// @param 请求参数
@@ -31,6 +31,9 @@ impl<'a> UpdateSqlBuilder<'a> {
         // 插入日期字段
         let date = Local::now().to_string();
         data.insert(UPDATED_AT.to_string(), Value::String(date));
+        // 判断是否有创建时间字段，如果有删除
+        // 创建时间不能修改
+        data.remove(CREATED_AT);
         Self {
             id,
             data,

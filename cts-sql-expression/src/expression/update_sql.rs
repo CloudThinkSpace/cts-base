@@ -1,7 +1,10 @@
 use std::collections::HashMap;
 
+use chrono::Local;
 use serde_json::Value;
 use sqlx::{Pool, Postgres};
+
+use super::UPDATED_AT;
 
 /// update sql构造器
 /// @param 请求参数
@@ -20,11 +23,14 @@ pub struct UpdateSqlBuilder<'a> {
 impl<'a> UpdateSqlBuilder<'a> {
     pub fn new(
         id: String,
-        data: HashMap<String, Value>,
+        mut data: HashMap<String, Value>,
         pool: &'a Pool<Postgres>,
         table: String,
         schema: String,
     ) -> Self {
+        // 插入日期字段
+        let date = Local::now().to_string();
+        data.insert(UPDATED_AT.to_string(), Value::String(date));
         Self {
             id,
             data,

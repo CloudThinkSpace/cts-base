@@ -14,6 +14,10 @@ use crate::error::CtsError::ParamError;
 
 pub static GEOMETRY: &str = "geom";
 
+pub static CREATED_AT:&str = "created_at";
+
+pub static UPDATED_AT:&str = "updated_at";
+
 
 
 #[derive(Debug, Serialize)]

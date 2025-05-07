@@ -5,6 +5,8 @@ use serde_json::Value;
 use sqlx::{Pool, Postgres};
 use uuid::Uuid;
 
+use super::{CREATED_AT, UPDATED_AT};
+
 /// save sql构造器
 /// @param 请求参数
 /// @param pool 数据库连接池
@@ -30,8 +32,8 @@ impl<'a> SaveSqlBuilder<'a> {
         data.insert("id".to_string(), Value::String(uuid_str));
         // 插入日期字段
         let date = Local::now().to_string();
-        data.insert("created_at".to_string(), Value::String(date.to_string()));
-        data.insert("updated_at".to_string(), Value::String(date));
+        data.insert(CREATED_AT.to_string(), Value::String(date.to_string()));
+        data.insert(UPDATED_AT.to_string(), Value::String(date));
         Self {
             data,
             pool,

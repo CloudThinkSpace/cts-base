@@ -52,7 +52,7 @@ impl<'a> SaveSqlBuilder<'a> {
         // 遍历字段
         for (key, value) in &self.data {
             // 收集sql字段
-            sql.push_str(&format!("\"{}\", ", key));
+            sql.push_str(&format!("{}, ", key));
             // 收集sql值
             values.push_str(&format!("{}, ", handler_value(value)));
         }

@@ -15,3 +15,4 @@ serde_json.workspace = true
 sqlx = {workspace = true, features = ["runtime-tokio-rustls", "postgres"]}
 cts-pgrow.workspace = true
 uuid = { workspace = true , features = ["v4"]}
+chrono.workspace = true

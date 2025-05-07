@@ -515,6 +515,7 @@ dependencies = [
 name = "cts-sql-expression"
 version = "0.1.0"
 dependencies = [
+ "chrono",
  "cts-pgrow",
  "serde",
  "serde_json",

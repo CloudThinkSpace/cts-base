@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+use chrono::{naive, Local};
 use serde_json::Value;
 use sqlx::{Pool, Postgres};
 use uuid::Uuid;
@@ -27,6 +28,9 @@ impl<'a> SaveSqlBuilder<'a> {
         let uuid_str = Uuid::new_v4().to_string();
         // 插入id字段，如果存在，替换成uuid字符串
         data.insert("id".to_string(), Value::String(uuid_str));
+        // 插入日期字段
+        let date = Local::now().to_string();
+        data.insert("created_at".to_string(), Value::String(date));
         Self {
             data,
             pool,

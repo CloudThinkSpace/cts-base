@@ -82,6 +82,7 @@ fn handler_between_value(data: &CtsValue) -> Result<String, CtsError> {
         CtsValue::Single(value) => match value {
             Single::Integer(value_int) => Ok(format!("{value_int}")),
             Single::Double(value_double) => Ok(format!("{value_double}")),
+            Single::String(value_string) => Ok(format!("'{value_string}'")),
             _ => Err(FilterError("BETWEEN参数错误".to_string())),
         },
         CtsValue::Array(_) => Err(FilterError("BETWEEN参数错误".to_string())),
